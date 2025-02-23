@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focusin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1739993655680-4b7050ed2896?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 3.5rem;
+      font-weight: 300;
+      margin-bottom: 1.5rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      font-weight: 300;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .search-container {
+      position: relative;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      background: white;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    button {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 20px;
+      background: #2196f3;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #1976d2;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .time {
+      font-size: 6rem;
+      font-weight: 300;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .date {
+      font-size: 1.5rem;
+      margin-bottom: 3rem;
+      font-weight: 300;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="time" id="time"></div>
+    <div class="date" id="date"></div>
+    <!-- <h2>Focus Blocker</h2> -->
+   
+    <div class="search-container">
+      <input type="text" id="taskInput" placeholder="apa yang mau kamu fokuskan saat ini..." />
+      <button id="startTask">Mulai</button>
+    </div>
+
+    <p style="font-size: 14px; margin-top: 20px;">fokuslah pada hal yang penting. jangan lalai information overload.</p>
+  </div>
+
+  <script src="startpage.js"></script>
+</body>
+</html>

@@ -1,127 +1,70 @@
-let timer;
-let timeLeft = 300; // 5 minutes in seconds
-let isRunning = false;
-
 document.addEventListener('DOMContentLoaded', () => {
-  updateTabCount();
-  setupEventListeners();
-  loadSettings();
-});
+  const timerElement = document.getElementById('timer');
+  const historyElement = document.getElementById('history');
+  const copyButton = document.getElementById('copyHistory');
+  const exportButton = document.createElement('button');
 
-async function updateTabCount() {
-  const tabs = await chrome.tabs.query({ currentWindow: true });
-  document.getElementById('tabCount').textContent = tabs.length;
-  
-  if (tabs.length > 3) {
-    showNotification('Too many tabs open', 'Please close some tabs to maintain focus.');
-  }
-}
+  exportButton.textContent = 'Export Log';
+  exportButton.className = 'copy';
+  document.body.appendChild(exportButton);
 
-function setupEventListeners() {
-  document.getElementById('startTimer').addEventListener('click', startTimer);
-  document.getElementById('pauseTimer').addEventListener('click', pauseTimer);
-  document.getElementById('resetTimer').addEventListener('click', resetTimer);
-  
-  document.getElementById('taskIntent').addEventListener('change', saveTaskIntent);
-  document.getElementById('hardcoreMode').addEventListener('change', saveSettings);
-  document.getElementById('soundAlerts').addEventListener('change', saveSettings);
-}
+  // Load history from storage
+  function loadHistory() {
+    chrome.storage.local.get(['activityHistory'], (data) => {
+      const history = data.activityHistory || [];
+      historyElement.innerHTML = ''; // Clear previous content
 
-function startTimer() {
-  const taskIntent = document.getElementById('taskIntent').value;
-  if (!taskIntent.trim()) {
-    showNotification('Task Intent Required', 'Please specify what you plan to accomplish.');
-    return;
+      history.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.textContent = `${index + 1}. Task: ${item.task} | Time: ${item.timestamp} | Duration: ${item.duration} seconds | Status: ${item.isBlocked ? 'Blocked' : 'Completed'}`;
+        historyElement.appendChild(div);
+      });
+    });
   }
 
-  isRunning = true;
-  document.getElementById('startTimer').disabled = true;
-  document.getElementById('pauseTimer').disabled = false;
-  
-  timer = setInterval(() => {
-    timeLeft--;
-    updateTimerDisplay();
-    
-    if (timeLeft <= 0) {
-      handleTimerComplete();
-    } else if (timeLeft <= 30) {
-      if (document.getElementById('soundAlerts').checked) {
-        playAlert();
+  // Update the global timer every second
+  function updateTimer() {
+    chrome.storage.local.get(['globalStartTime'], (data) => {
+      if (!data.globalStartTime) {
+        timerElement.textContent = 'No active task';
+        return;
       }
-    }
-  }, 1000);
-}
 
-function pauseTimer() {
-  isRunning = false;
-  clearInterval(timer);
-  document.getElementById('startTimer').disabled = false;
-  document.getElementById('pauseTimer').disabled = true;
-}
+      const elapsedSeconds = Math.floor((Date.now() - data.globalStartTime) / 1000);
+      const remainingSeconds = 5 * 60 - elapsedSeconds;
 
-function resetTimer() {
-  isRunning = false;
-  clearInterval(timer);
-  timeLeft = 300;
-  updateTimerDisplay();
-  document.getElementById('startTimer').disabled = false;
-  document.getElementById('pauseTimer').disabled = true;
-}
+      if (remainingSeconds <= 0) {
+        timerElement.textContent = 'Time is up!';
+        return;
+      }
 
-function updateTimerDisplay() {
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  document.getElementById('timer').textContent = 
-    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function handleTimerComplete() {
-  clearInterval(timer);
-  
-  if (document.getElementById('hardcoreMode').checked) {
-    chrome.runtime.sendMessage({ action: 'blockTabs' });
-  } else {
-    chrome.runtime.sendMessage({ action: 'blurTabs' });
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+      timerElement.textContent = `Active: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    });
   }
-  
-  showNotification('Time\'s Up!', 'Your focus session has ended.');
-}
 
-function showNotification(title, message) {
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: 'icons/icon48.png',
-    title: title,
-    message: message
+  // Copy history to clipboard
+  copyButton.addEventListener('click', () => {
+    chrome.storage.local.get(['activityHistory'], (data) => {
+      const history = data.activityHistory || [];
+      const text = history
+        .map((item, index) => `${index + 1}. Task: ${item.task} | Time: ${item.timestamp} | Duration: ${item.duration} seconds | Status: ${item.isBlocked ? 'Blocked' : 'Completed'}`)
+        .join('\n');
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('History copied to clipboard!');
+      });
+    });
   });
-}
 
-function saveTaskIntent() {
-  const intent = document.getElementById('taskIntent').value;
-  chrome.storage.local.set({ taskIntent: intent });
-}
-
-function saveSettings() {
-  const settings = {
-    hardcoreMode: document.getElementById('hardcoreMode').checked,
-    soundAlerts: document.getElementById('soundAlerts').checked
-  };
-  chrome.storage.local.set({ settings });
-}
-
-function loadSettings() {
-  chrome.storage.local.get(['settings', 'taskIntent'], (data) => {
-    if (data.settings) {
-      document.getElementById('hardcoreMode').checked = data.settings.hardcoreMode;
-      document.getElementById('soundAlerts').checked = data.settings.soundAlerts;
-    }
-    if (data.taskIntent) {
-      document.getElementById('taskIntent').value = data.taskIntent;
-    }
+  // Export log to file
+  exportButton.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: "exportLog" });
   });
-}
 
-function playAlert() {
-  const audio = new Audio('alert.mp3');
-  audio.play();
-}
+  // Initialize
+  setInterval(updateTimer, 1000); // Update timer every second
+  loadHistory(); // Load history on popup open
+});

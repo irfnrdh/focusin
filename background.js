@@ -1,207 +1,220 @@
-const MAX_TABS = 3;
-const DEFAULT_TIME_LIMIT = 5 * 60 * 1000; // 5 minutes in ms
-const whitelist = ["docs.google.com", "obsidian.md", "notion.so"];
-const blockedSites = ["facebook.com", "twitter.com", "instagram.com", "reddit.com"];
-
+const MAX_TABS = 3; // maksimal tab
+const FOCUS_TIME_LIMIT = 5 * 60; // 5 lama waktu per putaran
+let activeTabs = {};
 let globalTimer = null;
-let activeTimer = null;
-let endTime = null;
+let globalStartTime = null;
 
-// Utility: Update badge text
-function updateBadgeText(remainingTime) {
-  const minutes = Math.floor(remainingTime / 60000);
-  const seconds = Math.floor((remainingTime % 60000) / 1000);
-  chrome.action.setBadgeText({
-    text: `${minutes}:${seconds.toString().padStart(2, "0")}`,
-  });
-  chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+// Function to update the badge text with the countdown timer
+function updateBadgeText(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  const timeString = `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  chrome.action.setBadgeText({ text: timeString });
 }
 
-// Global Timer Function
-function startGlobalTimer(duration) {
-  if (globalTimer) clearInterval(globalTimer);
+// Function to start the global countdown timer
+function startGlobalCountdown() {
+  if (globalTimer) return; // Prevent multiple timers
 
-  endTime = Date.now() + duration;
+  globalStartTime = Date.now();
+  let remainingTime = FOCUS_TIME_LIMIT;
 
-  function tick() {
-    const remaining = endTime - Date.now();
-    if (remaining <= 0) {
+  // Update the badge text immediately
+  updateBadgeText(remainingTime);
+
+  // Start the countdown interval
+  globalTimer = setInterval(() => {
+    remainingTime = FOCUS_TIME_LIMIT - Math.floor((Date.now() - globalStartTime) / 1000);
+
+    if (remainingTime <= 0) {
       clearInterval(globalTimer);
-      handleTimerEnd();
+      blockAllTabs();
+      chrome.action.setBadgeText({ text: "X" });
+      saveActivity("Global Timer Expired", true); // Save activity when blocked
       return;
     }
-    updateBadgeText(remaining);
-
-    // Broadcast timer updates to all tabs
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { type: "timerUpdate", remainingTime: remaining }).catch(() => {});
-      });
-    });
-  }
-
-  globalTimer = setInterval(tick, 1000);
-  tick(); // Initial call
+    updateBadgeText(remainingTime);
+  }, 1000);
 }
 
-// Start Focus Timer
-async function startTimer(taskIntent) {
-  if (globalTimer) {
-    console.log("Timer already running");
-    return;
-  }
-
-  const startTime = Date.now();
-  endTime = startTime + DEFAULT_TIME_LIMIT;
-
-  // Store session data
-  await chrome.storage.local.set({
-    timerActive: true,
-    currentTaskIntent: taskIntent,
-    startTime,
-    currentEndTime: endTime,
-  });
-
-  // Broadcast task update to all tabs
+// Function to block all tabs
+function blockAllTabs() {
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
-      chrome.tabs.sendMessage(tab.id, { type: "taskUpdate", task: taskIntent }).catch(() => {});
+      chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("blocked.html") });
     });
   });
-
-  // Start the global timer
-  startGlobalTimer(DEFAULT_TIME_LIMIT);
 }
 
-// Reset Timer
-async function resetTimer() {
-  if (globalTimer) clearInterval(globalTimer);
-  if (activeTimer) clearTimeout(activeTimer);
-
-  await chrome.storage.local.set({
-    timerActive: false,
-    startTime: null,
-    currentEndTime: null,
+// Handle tab activation
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.tabs.get(activeInfo.tabId, (tab) => {
+    if (!activeTabs[tab.id]) {
+      activeTabs[tab.id] = { startTime: Date.now(), url: tab.url };
+      checkTabLimit();
+    }
   });
 
-  endTime = null;
-  globalTimer = null;
-  activeTimer = null;
-}
+  // Start global timer if not already started
+  if (!globalStartTime) {
+    startGlobalCountdown();
+  }
+});
 
-// Recover State on Service Worker Start
-async function recoverState() {
-  const { timerActive, currentEndTime } = await chrome.storage.local.get(["timerActive", "currentEndTime"]);
 
-  if (timerActive && currentEndTime) {
-    const remainingTime = currentEndTime - Date.now();
-    if (remainingTime > 0) {
-      endTime = currentEndTime;
-      startGlobalTimer(remainingTime);
+chrome.tabs.onCreated.addListener(async (tab) => {
+  // const taskValid = await isTaskInputValid();
+  // if (!taskValid) {
+  //   chrome.tabs.remove(tab.id);
+  //   chrome.notifications.create({
+  //     type: "basic",
+  //     iconUrl: "icon.png",
+  //     title: "Task Required",
+  //     message: "You must enter a task before opening tabs."
+  //   });
+  //   return;
+  // }
+
+  // Hitung jumlah tab saat ini
+  chrome.tabs.query({}, (tabs) => {
+    if (tabs.length > MAX_TABS) {
+      
+      chrome.tabs.remove(tab.id);
+
+      // chrome.notifications.create({
+      //   type: "basic",
+      //   iconUrl: "icon.png",
+      //   title: "Tab Limit Reached",
+      //   message: `You can only have ${MAX_TABS} tabs open at a time.`
+      // });
+
+      alert("Kamu hanya boleh fokus pada 3 tab aktif saja.");
+
+
     } else {
-      handleTimerEnd();
+      // Simpan informasi tab di objek activeTabs
+      activeTabs[tab.id] = { startTime: Date.now(), url: tab.url };
     }
+  });
+
+
+});
+
+
+// Handle tab removal
+chrome.tabs.onRemoved.addListener((tabId) => {
+  saveActivity(`Tab Closed: ${activeTabs[tabId]?.url}`, false); // Save activity when tab is closed
+  delete activeTabs[tabId];
+});
+
+// Check tab limit
+function checkTabLimit() {
+  if (Object.keys(activeTabs).length > MAX_TABS) {
+    // Block all tabs that exceed the limit
+    // chrome.tabs.query({}, (tabs) => {
+    //   tabs.forEach((tab) => {
+    //     chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("tablimit.html") });
+    //   });
+    // });
+
+  alert("Kamu hanya boleh fokus pada 3 tab aktif saja.");
+
+
+    // Notify the user
+    // chrome.notifications.create({
+    //   type: "basic",
+    //   iconUrl: "icon.png",
+    //   title: "Focus Blocker",
+    //   message: "You have exceeded the maximum number of tabs allowed. All tabs are now blocked.",
+    // });
+
+    // Clear active tabs to prevent further actions
+    // activeTabs = {};
   }
 }
 
-// Handle Timer End
-async function handleTimerEnd() {
-  clearInterval(globalTimer);
-  globalTimer = null;
+// Save activity to storage
+function saveActivity(task, isBlocked) {
+  const timestamp = new Date().toLocaleString(); // Record the timestamp
+  const duration = Math.floor((Date.now() - globalStartTime) / 1000);
 
-  chrome.action.setBadgeText({ text: "" });
-
-  await chrome.storage.local.set({
-    timerActive: false,
-    startTime: null,
-  });
-
-  // Notify user
-  chrome.notifications.create({
-    type: "basic",
-    iconUrl: "icons/icon48.png",
-    title: "Focus Time Ended",
-    message: "Your focus session is complete!",
-    buttons: [{ title: "Take Break" }, { title: "Start New Session" }],
-  });
-
-  // Apply restrictions to non-whitelisted tabs
-  const tabs = await chrome.tabs.query({});
-  for (const tab of tabs) {
-    if (!isWhitelisted(tab.url)) {
-      handleBlurTabs(tab.id);
-    }
-  }
-}
-
-// Prompt for Task Intent
-async function promptForTaskIntent() {
-  return new Promise((resolve) => {
-    chrome.windows.create(
-      {
-        url: "task-intent.html",
-        type: "popup",
-        width: 400,
-        height: 300,
-      },
-      (window) => {
-        chrome.runtime.onMessage.addListener(function listener(message) {
-          if (message.type === "taskIntent") {
-            chrome.runtime.onMessage.removeListener(listener);
-            chrome.windows.remove(window.id);
-            resolve(message.intent);
-          }
-        });
-      }
-    );
+  chrome.storage.local.get(['activityHistory'], (data) => {
+    const history = data.activityHistory || [];
+    history.push({ task, timestamp, duration, isBlocked });
+    chrome.storage.local.set({ activityHistory: history });
   });
 }
 
-// Message Listener
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  switch (request.action) {
-    case "startNewSession":
-      promptForTaskIntent().then((taskIntent) => {
-        if (taskIntent) {
-          startTimer(taskIntent);
-        } else {
-          alert("Please provide a task to start the focus session.");
-        }
-      });
-      break;
-    case "extendTime":
-      handleTimeExtension();
-      break;
-    case "blockTabs":
-      handleBlockTabs();
-      break;
-    case "blurTabs":
-      handleBlurTabs();
-      break;
-    case "getTimeRemaining":
-      sendResponse({ timeRemaining: endTime ? endTime - Date.now() : 0 });
-      break;
-    case "resetTimer":
-      resetTimer();
-      break;
-    case "getState":
-      getState(sendResponse);
-      return true; // Keep channel open for async response
+// Handle messages from blocked.html
+// Handle messages from blocked.html
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "extendTime") {
+    const newTime = message.minutes * 60; // Convert minutes to seconds
+    globalStartTime = Date.now() - (FOCUS_TIME_LIMIT - newTime) * 1000;
+
+    // Restart the countdown timer
+    clearInterval(globalTimer);
+    globalTimer = null;
+    startGlobalCountdown();
+  } else if (message.action === "resumeTask") {
+    const tabId = sender.tab.id;
+    chrome.storage.local.get(['previousUrl'], (data) => {
+      const previousUrl = data.previousUrl || "https://www.google.com"; // Default fallback
+      chrome.tabs.update(tabId, { url: previousUrl });
+    });
+  } else if (message.action === "exportLog") {
+    exportLogToFile();
   }
 });
 
-// Notification Button Handler
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  if (buttonIndex === 1) {
-    handleTimeExtension();
-  }
-});
-
-// Check if URL is Whitelisted
-function isWhitelisted(url) {
-  if (!url) return false;
-  return whitelist.some((domain) => url.includes(domain));
+// Save previous URL when blocking a site
+function blockSite(tabId) {
+  chrome.tabs.get(tabId, (tab) => {
+    chrome.storage.local.set({ previousUrl: tab.url }, () => {
+      chrome.tabs.update(tabId, { url: chrome.runtime.getURL("blocked.html") });
+    });
+  });
 }
 
-// Initial Setup
-recoverState();
+// Export log to a JSON file
+function exportLogToFile() {
+  chrome.storage.local.get(['activityHistory'], (data) => {
+    const history = data.activityHistory || [];
+    const logContent = JSON.stringify(history, null, 2);
+
+    const blob = new Blob([logContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    chrome.downloads.download({
+      url: url,
+      filename: "focus_blocker_log.json",
+      saveAs: true,
+    });
+  });
+}
+
+// Initialize on install
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      activeTabs[tab.id] = { startTime: Date.now(), url: tab.url };
+    });
+    checkTabLimit();
+  });
+});
+
+
+// Mendapatkan history log
+
+chrome.history.onVisited.addListener((historyItem) => {
+  chrome.storage.local.get({ logs: [] }, (data) => {
+    const logs = data.logs;
+    logs.push({
+      url: historyItem.url,
+      title: historyItem.title,
+      timestamp: new Date().toISOString()
+    });
+
+    chrome.storage.local.set({ logs });
+  });
+});

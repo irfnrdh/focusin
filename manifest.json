@@ -1,42 +1,38 @@
 {
-    "manifest_version": 3,
-    "name": "Fokusin",
-    "version": "1.0",
-    "description": "A focus management tool for ADHD with timer and website blocking features",
-    "permissions": [
-      "storage",
-      "tabs",
-      "activeTab",
-      "scripting",
-      "alarms",
-      "notifications",
-      "webNavigation"
-
-    ],
-    "host_permissions": [
-      "<all_urls>"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-      }
-    },
-    "icons": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    },
-    "chrome_url_overrides": {
-      "newtab": "focus-tab.html"
-    },
-    "web_accessible_resources": [{
-      "resources": ["styles.css", "focus-tab.html"],
-      "matches": ["<all_urls>"]
-    }]
+  "manifest_version": 3,
+  "name": "Focusin",
+  "version": "1.0",
+  "description": "A Chrome extension for ADHD with timer to block distracting sites and enforce focus.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications",
+    "webNavigation",
+    "downloads",
+    "history"
+  ],  
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "startpage.html"
   }
+}
