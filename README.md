@@ -1,5 +1,5 @@
 # FOCUSIN
 
-Chrome Extention for AHDH Block Distracting
+Chrome Extention for ADHD (Attention Deficit Hyperactivity Disorder) Block Distracting
 
 ![Demo](image.png)
