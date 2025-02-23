@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fokusind</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      width: 360px;
+      height: 500px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .timer-display {
+      font-size: 2.5rem;
+      font-weight: bold;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    .tab-count {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #e2e8f0;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="tab-count">Tabs: <span id="tabCount">0</span>/3</div>
+  
+  <div class="flex flex-col items-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Fokusind</h1>
+    
+    <div class="timer-display text-gray-700" id="timer">
+      05:00
+    </div>
+
+    <div class="w-full space-y-4">
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="font-semibold mb-2">Task Intent</h2>
+        <textarea 
+          id="taskIntent" 
+          class="w-full p-2 border rounded resize-none"
+          placeholder="What do you plan to accomplish?"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="font-semibold mb-2">Timer Controls</h2>
+        <div class="flex space-x-2">
+          <button id="startTimer" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+            Start
+          </button>
+          <button id="pauseTimer" class="flex-1 bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600" disabled>
+            Pause
+          </button>
+          <button id="resetTimer" class="flex-1 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="font-semibold mb-2">Quick Settings</h2>
+        <div class="space-y-2">
+          <label class="flex items-center">
+            <input type="checkbox" id="hardcoreMode" class="mr-2">
+            Hardcore Mode
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" id="soundAlerts" class="mr-2" checked>
+            Sound Alerts
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

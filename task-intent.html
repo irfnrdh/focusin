@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>What's Your Focus?</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
+    <h1 class="text-xl font-bold mb-4">What do you plan to accomplish?</h1>
+    <p class="text-gray-600 mb-4">Setting a clear intention helps maintain focus during your session.</p>
+    
+    <textarea 
+      id="intentInput"
+      class="w-full p-3 border rounded-md mb-4 h-24"
+      placeholder="I want to..."
+    ></textarea>
+    
+    <div class="flex justify-end space-x-3">
+      <button 
+        id="cancelBtn"
+        class="px-4 py-2 text-gray-600 hover:text-gray-800"
+      >
+        Cancel
+      </button>
+      <button 
+        id="submitBtn"
+        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+      >
+        Start Session
+      </button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      const intent = document.getElementById('intentInput').value.trim();
+      if (intent) {
+        chrome.runtime.sendMessage({
+          type: 'taskIntent',
+          intent
+        });
+      }
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      chrome.runtime.sendMessage({
+        type: 'taskIntent',
+        intent: null
+      });
+    });
+  </script>
+</body>
+</html>
