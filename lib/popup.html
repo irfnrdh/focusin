@@ -1,0 +1,135 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reverse Pomodoro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Reverse Pomodoro</h1>
+  <button id="start">Start</button>
+  <button id="stop">Stop</button>
+  <button id="export">Export Log</button>
+
+  <h2>To-Do List</h2>
+  <input type="text" id="task" placeholder="Tambahkan tugas">
+  <button id="addTask">Tambah</button>
+  <ul id="taskList"></ul>
+
+  <script src="popup.js"></script>
+  <script src="todo.js"></script>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverse Pomodoro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .timer-container {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .time {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            width: 0;
+            background: #4CAF50;
+            transition: width 0.5s;
+        }
+        .controls button {
+            border: none;
+            background: none;
+            font-size: 2em;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <h2>Reverse Pomodoro</h2>
+        <div class="time" id="timer">25:00</div>
+        <div class="progress-bar"><div class="progress" id="progress"></div></div>
+        <div class="controls">
+            <button id="startPause"><i class="fas fa-play"></i></button>
+            <button id="stop"><i class="fas fa-stop"></i></button>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let timeLeft = 1500;
+        let isRunning = false;
+
+        const timerDisplay = document.getElementById('timer');
+        const progressBar = document.getElementById('progress');
+        const startPauseButton = document.getElementById('startPause');
+        const stopButton = document.getElementById('stop');
+
+        function updateTimerDisplay() {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function startPauseTimer() {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+                startPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+            } else {
+                timer = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                        progressBar.style.width = `${(1 - timeLeft / 1500) * 100}%`;
+                    } else {
+                        clearInterval(timer);
+                        isRunning = false;
+                    }
+                }, 1000);
+                isRunning = true;
+                startPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+            timeLeft = 1500;
+            updateTimerDisplay();
+            progressBar.style.width = '0%';
+            isRunning = false;
+            startPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+        }
+
+        startPauseButton.addEventListener('click', startPauseTimer);
+        stopButton.addEventListener('click', stopTimer);
+
+        updateTimerDisplay();
+    </script>
+</body>
+</html>

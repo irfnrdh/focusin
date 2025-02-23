@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Focusin",
+  "name": "Focusin Pomodoro",
   "version": "1.0",
-  "description": "A Chrome extension for ADHD with timer to block distracting sites and enforce focus.",
+  "description": "A Chrome extension for pomodoro and reverse pomodoro.",
   "permissions": [
     "alarms",
     "tabs",
@@ -32,8 +32,5 @@
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  },
-  "chrome_url_overrides": {
-    "newtab": "startpage.html"
   }
 }
