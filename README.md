@@ -19,4 +19,5 @@ Chrome Extention for ADHD (Attention Deficit Hyperactivity Disorder) Block Distr
 - [ ] Switch from work/break easily
 - [ ] Change alert sounds
 - [ ] Intagrated to Obsidian -> Indway
-
+- [ ] Alarm 
+- [ ] Autobreak at Athan with Muslim Prayer Times
