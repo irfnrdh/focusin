@@ -1,5 +1,3 @@
-let globalTimer = null;
-
 document.addEventListener('DOMContentLoaded', async () => {
   updateTabCount();
   await syncTimerState();
@@ -7,13 +5,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupEventListeners() {
-  document.getElementById('startFocus').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'startNewSession' });
+  document.getElementById('startFocus').addEventListener('click', async () => {
+    const taskIntent = await promptForTaskIntent();
+    if (taskIntent) {
+      chrome.runtime.sendMessage({ action: 'startNewSession', task: taskIntent });
+    } else {
+      alert("Please provide a task to start the focus session.");
+    }
   });
 
   document.getElementById('extendTime').addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'extendTime' });
   });
+}
+
+async function promptForTaskIntent() {
+  const task = prompt("What is your current task?");
+  return task ? task.trim() : null;
 }
 
 async function updateTabCount() {
