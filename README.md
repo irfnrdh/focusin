@@ -5,6 +5,7 @@ Chrome Extention for ADHD (Attention Deficit Hyperactivity Disorder) Block Distr
 ![Demo](image.png)
 
 ## Roadmap :
+
 - [ ] Starter Page like [Momentum](https://chromewebstore.google.com/detail/momentum/laookkfknpbbblfpciffpaejjkokdgca) 
 - [ ] Pomodoros -> Library ✅
 - [ ] Reverse Pomodoro -> Library ✅
@@ -17,3 +18,5 @@ Chrome Extention for ADHD (Attention Deficit Hyperactivity Disorder) Block Distr
 - [ ] Browser History
 - [ ] Switch from work/break easily
 - [ ] Change alert sounds
+- [ ] Intagrated to Obsidian -> Indway
+
