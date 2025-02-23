@@ -6,8 +6,177 @@ const whitelist = [
     'notion.so'
 ];
 
+// Blocked websites list
+const blockedSites = [
+    'facebook.com',
+    'twitter.com',
+    'instagram.com',
+    'reddit.com',
+    // Add more sites as needed
+  ];
+  
+  let globalTimer = null;
+
 let activeTimer = null;
-let endTime = null;
+  let endTime = null;
+  
+  // Function to update badge text
+  function updateBadgeText(remainingTime) {
+    const minutes = Math.floor(remainingTime / 60000);
+    const seconds = Math.floor((remainingTime % 60000) / 1000);
+    chrome.action.setBadgeText({
+      text: `${minutes}:${seconds.toString().padStart(2, '0')}`
+    });
+    chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
+  }
+  
+  // Global timer function
+  function startGlobalTimer(duration) {
+    if (globalTimer) clearInterval(globalTimer);
+    
+    endTime = Date.now() + duration;
+    
+    function tick() {
+      const remaining = endTime - Date.now();
+      if (remaining <= 0) {
+        clearInterval(globalTimer);
+        handleTimerEnd();
+        return;
+      }
+      
+      updateBadgeText(remaining);
+      
+      // Broadcast timer update to all tabs
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'timerUpdate',
+            remainingTime: remaining
+          }).catch(() => {}); // Ignore errors for inactive tabs
+        });
+      });
+    }
+  
+    globalTimer = setInterval(tick, 1000);
+    tick(); // Initial call
+  }
+  
+  // Modified startTimer function
+  async function startTimer() {
+    // Check if timer is already running
+    if (globalTimer) {
+      console.log('Timer already running');
+      return;
+    }
+  
+    const taskIntent = await promptForTaskIntent();
+    if (!taskIntent) return;
+  
+    await chrome.storage.local.set({
+      timerActive: true,
+      currentTaskIntent: taskIntent,
+      startTime: Date.now()
+    });
+  
+    // Broadcast task update
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'taskUpdate',
+          task: taskIntent
+        }).catch(() => {});
+      });
+    });
+  
+    startGlobalTimer(DEFAULT_TIME_LIMIT);
+  }
+  
+  // Modified website blocking logic
+  async function checkUrl(tabId, url) {
+    if (!url) return;
+  
+    // Check blocked sites
+    if (blockedSites.some(site => url.includes(site))) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          function: () => {
+            document.body.innerHTML = `
+              <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: #f8fafc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: system-ui;
+              ">
+                <div style="text-align: center;">
+                  <h1 style="font-size: 24px; margin-bottom: 16px;">
+                    This site is blocked during focus time
+                  </h1>
+                  <p style="color: #64748b;">
+                    Return to your task or take a break
+                  </p>
+                </div>
+              </div>
+            `;
+          }
+        });
+      } catch (error) {
+        console.error('Failed to block site:', error);
+      }
+    }
+  }
+  
+  // Add URL monitoring
+  chrome.webNavigation.onCompleted.addListener((details) => {
+    checkUrl(details.tabId, details.url);
+  });
+  
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete') {
+      checkUrl(tabId, tab.url);
+    }
+  });
+  
+  // Modified timer end handler
+  async function handleTimerEnd() {
+    clearInterval(globalTimer);
+    globalTimer = null;
+    
+    chrome.action.setBadgeText({ text: '' });
+    
+    await chrome.storage.local.set({
+      timerActive: false,
+      startTime: null
+    });
+  
+    // Show notification
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon48.png',
+      title: 'Focus Time Ended',
+      message: 'Your focus session is complete!',
+      buttons: [
+        { title: 'Take Break' },
+        { title: 'Start New Session' }
+      ]
+    });
+  
+    // Apply restrictions to all tabs
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (!isWhitelisted(tab.url)) {
+        handleBlurTabs();
+      }
+    }
+  }
+  
+
 
 // Initial setup on extension installation
 chrome.runtime.onInstalled.addListener(() => {

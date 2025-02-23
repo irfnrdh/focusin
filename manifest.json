@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Fokusind",
+    "name": "Fokusin",
     "version": "1.0",
     "description": "A focus management tool for ADHD with timer and website blocking features",
     "permissions": [
@@ -9,7 +9,9 @@
       "activeTab",
       "scripting",
       "alarms",
-      "notifications"
+      "notifications",
+      "webNavigation"
+
     ],
     "host_permissions": [
       "<all_urls>"
@@ -29,5 +31,12 @@
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
-    }
+    },
+    "chrome_url_overrides": {
+      "newtab": "focus-tab.html"
+    },
+    "web_accessible_resources": [{
+      "resources": ["styles.css", "focus-tab.html"],
+      "matches": ["<all_urls>"]
+    }]
   }
